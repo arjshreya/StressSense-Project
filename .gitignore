@@ -5,6 +5,7 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
-archive(3).zip
+archive (3).zip
+archive (3)/
 Student_Mental_Stress_and_Coping_Mechanisms.csv
-TESS Toronto emotional speech set data
+TESS Toronto emotional speech set data/
