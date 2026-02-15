@@ -15,8 +15,7 @@ const PORT = process.env.PORT || 5000;
 // ------------------------------------------
 //  MONGODB CONNECTION (YOUR EXACT URI)
 // ------------------------------------------
-const MONGODB_URI =
-  'mongodb+srv://arjugadeshreya66_db_user:FZYG6X6ntJWFcR4X@cluster0.uxmb17y.mongodb.net/stress_project_db?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose
   .connect(MONGODB_URI)
