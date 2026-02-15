@@ -1,0 +1,9 @@
+node_modules/
+.env
+dist/
+build/
+__pycache__/
+*.pyc
+.DS_Store
+archive(3).zip
+Student_Mental_Stress_and_Coping_Mechanisms.csv

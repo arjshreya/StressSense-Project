@@ -1,0 +1,11 @@
+/* lightweight reset and base styles */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body,#root { height: 100%; }
+body {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: #f3f6fb;
+  color: #222;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 30px 20px;
+}
