@@ -51,31 +51,31 @@ To run the project correctly, you must start the services in the following order
 Step 1: Start the ML Prediction Service (Python)
 The Node.js server depends on this API to process stress scores.
 
-Bash
+'''Bash
 # Terminal 1
 cd backend
 pip install flask joblib numpy pandas
-python ml_api.py
+python ml_api.py'''
 Confirmed: You should see "Running on https://www.google.com/search?q=http://127.0.0.1:5001"
 
 Step 2: Start the API Gateway (Node.js)
 This handles your Database connection and Authentication.
 
-Bash
+'''Bash
 # Terminal 2
 cd backend
 npm install
-node server.js
+node server.js'''
 Confirmed: You should see "Server running on port 5000" and "MongoDB Connected"
 
 Step 3: Start the User Interface (React)
 The final layer for user interaction.
 
-Bash
+'''Bash
 # Terminal 3
 cd frontend
 npm install
-npm start
+npm start'''
 Confirmed: Browser will open http://localhost:3000 automatically.
 
 📝 License
