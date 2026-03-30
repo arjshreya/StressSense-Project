@@ -26,7 +26,7 @@ MegaProject/
 │   └── ml_api.py       # Python Flask ML Service (Port 5001)
 ├── .gitignore          # Rules for excluded files (.env, node_modules)
 └── README.md           # Project Documentation
-
+```
 🚀 Installation & Setup
 1. Prerequisites
 Ensure you have the following installed:
