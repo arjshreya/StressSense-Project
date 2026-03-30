@@ -38,44 +38,38 @@ Python (v3.8+)
 Git
 
 2. Environment Configuration
-Create a .env file in the backend/ folder:
+Create a .env file in the backend/ folder and add the following (replace with your own credentials):
 
 Code snippet
 MONGODB_URI=your_mongodb_atlas_uri
 JWT_SECRET=your_secure_random_string
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+EMAIL_PASS=your_gmail_app_password
 🏃 How to Run (Step-by-Step)
 To run the project correctly, you must start the services in the following order using three separate terminals in VS Code:
 
 Step 1: Start the ML Prediction Service (Python)
-The Node.js server depends on this API to process stress scores.
-
-'''Bash
+Bash
 # Terminal 1
 cd backend
 pip install flask joblib numpy pandas
-python ml_api.py'''
-Confirmed: You should see "Running on https://www.google.com/search?q=http://127.0.0.1:5001"
+python ml_api.py
+Confirmed: You should see "Running on http://127.0.0.1:5001"
 
 Step 2: Start the API Gateway (Node.js)
-This handles your Database connection and Authentication.
-
-'''Bash
+Bash
 # Terminal 2
 cd backend
 npm install
-node server.js'''
+node server.js
 Confirmed: You should see "Server running on port 5000" and "MongoDB Connected"
 
 Step 3: Start the User Interface (React)
-The final layer for user interaction.
-
-'''Bash
+Bash
 # Terminal 3
 cd frontend
 npm install
-npm start'''
+npm start
 Confirmed: Browser will open http://localhost:3000 automatically.
 
 📝 License
