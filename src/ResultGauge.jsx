@@ -1,45 +1,61 @@
-import React from "react";
+import React, {useEffect} from "react";
 import GaugeChart from "./GaugeChart";
 import Header from './Header'; 
 import './Dashboard.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const ResultGauge = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
     const location = useLocation();
     const navigate = useNavigate();
-    
-    // FIXED: get state directly
+
     const resultData = location.state;
 
-    // If no result data → redirect user
+    // Redirect if no data
     if (!resultData) {
         navigate('/dashboard/existing', { replace: true });
         return <div>Redirecting...</div>;
     }
 
-    // FIXED: correct variable names
-    const stressLevel = Math.round(resultData.predicted_score || 0);
-    const category = resultData.category || "Unknown";
+    // ✅ Get stress label directly
+    const stressLabel = resultData.stress_label || "Unknown";
+
     const recommendations = resultData.recommendations || [];
 
     return (
         <div className="dashboard-wrapper">
+
             <Header hasHistory={true} />
 
             <div className="dashboard-container">
+
                 <div className="result-card">
+
                     <h1>Stress Assessment Result</h1>
+
                     <p className="subtitle">
-                        Your stress score has been calculated using facial, voice & lifestyle inputs.
+                        Your stress level has been analyzed using behavioral,
+                        facial and voice inputs.
                     </p>
 
-                    <GaugeChart value={stressLevel} />
+                    {/* ✅ Send label instead of percentage */}
+                    <GaugeChart label={stressLabel} />
 
                     <h2 style={{ marginTop: "25px" }}>
-                        Category: <span style={{ color: "#2563eb" }}>{category}</span>
+                        Stress Level:
+                        <span style={{ color: "#2563eb" }}>
+                            {" "}{stressLabel}
+                        </span>
                     </h2>
 
-                    <div className="recommendations-block" style={{ marginTop: "20px" }}>
+                    <div
+                        className="recommendations-block"
+                        style={{ marginTop: "20px" }}
+                    >
+
                         <h3>Your Recommendations</h3>
 
                         {recommendations.length === 0 ? (
@@ -60,6 +76,7 @@ const ResultGauge = () => {
                     >
                         Go to Home
                     </button>
+
                 </div>
             </div>
         </div>

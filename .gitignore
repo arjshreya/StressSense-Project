@@ -1,7 +1,11 @@
+# Ignore heavy local environment dependencies
 node_modules/
-.env
-dist/
-build/
-__pycache__/
+.venv/
+venv/
+ENV/
 *.pyc
-.DS_Store
+__pycache__/
+
+# Ignore deep learning models to keep pushes lightweight
+*.h5
+*.pkl

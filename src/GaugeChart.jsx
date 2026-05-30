@@ -1,145 +1,240 @@
-import React, { useEffect, useRef } from "react";
-// Import Chart from 'chart.js/auto' is correct for a default export
-import Chart from "chart.js/auto"; 
-import './Dashboard.css';
+// src/GaugeChart.jsx
 
-const GaugeChart = ({ value }) => {
+import React, { useEffect, useRef } from "react";
+import Chart from "chart.js/auto";
+import "./Dashboard.css";
+
+const GaugeChart = ({ label }) => {
+
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Define the stress segments (33%, 33%, 34% of the arc)
+  // =========================
+  // CONVERT LABEL TO VALUE
+  // =========================
+
+  const gaugeValue =
+    label === "Low Stress"
+      ? 25
+      : label === "Medium Stress"
+      ? 55
+      : 85;
+
   const dataSegments = [33, 33, 34];
   const totalGaugeValue = 100;
-  
-  // --- Custom Plugin: The logic to draw and position the needle ---
-  const needlePlugin = {
-    id: "needle",
-    afterDatasetDraw(chart) {
-      const { ctx, data } = chart;
-      
-      // Get the current stress value (0-100)
-      const needleValue = data.datasets[0].value || 0; 
 
-      // Calculate center coordinates
-      // cx and cy should be the center point of the semi-circle
-      const meta = chart.getDatasetMeta(0);
+  // =========================
+  // NEEDLE PLUGIN
+  // =========================
+
+  const needlePlugin = {
+
+    id: "needle",
+
+    afterDatasetDraw(chart) {
+
+      const { ctx, data } = chart;
+
+      const needleValue =
+        data.datasets[0].value || 0;
+
+      const meta =
+        chart.getDatasetMeta(0);
+
       const cx = meta.data[0].x;
       const cy = meta.data[0].y;
-      const angleOfNeedle = (Math.PI * needleValue) / totalGaugeValue;
-      // Calculate final angle for the needle (starts at 180 deg (Math.PI) and ends at 360 deg)
-      // The gauge spans only 180 degrees (Math.PI).
-      // Angle: Math.PI (180 deg) + (Math.PI * (value / 100))
-      // Since rotation starts at 270 deg (bottom center), we need 270 - 180 + angle.
-      const finalAngle = Math.PI * 1.5 + angleOfNeedle; 
-      
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(finalAngle); // Rotate by the calculated angle
 
-      // 1. Draw the Needle (a simple black line)
+      const angleOfNeedle =
+        (Math.PI * needleValue) /
+        totalGaugeValue;
+
+      const finalAngle =
+        Math.PI * 1.5 +
+        angleOfNeedle;
+
+      ctx.save();
+
+      ctx.translate(cx, cy);
+
+      ctx.rotate(finalAngle);
+
+      // NEEDLE
       ctx.beginPath();
+
       ctx.moveTo(0, 0);
-      ctx.lineTo(0, -chart.width / 2.5); // Needle length
+
+      ctx.lineTo(
+        0,
+        -chart.width / 2.5
+      );
+
       ctx.lineWidth = 4;
+
       ctx.strokeStyle = "#111827";
+
       ctx.stroke();
-      
-      // 2. Draw the Needle Hub (the small circle at the center)
+
+      // CENTER DOT
       ctx.beginPath();
-      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+
+      ctx.arc(
+        0,
+        0,
+        8,
+        0,
+        Math.PI * 2
+      );
+
       ctx.fillStyle = "#111827";
+
       ctx.fill();
-      
+
       ctx.restore();
     },
   };
 
-  useEffect(() => {
-    const ctx = canvasRef.current.getContext("2d");
+  // =========================
+  // CHART
+  // =========================
 
-    // Destroy previous chart instance to avoid "Canvas is already in use" error
+  useEffect(() => {
+
+    const ctx =
+      canvasRef.current.getContext("2d");
+
+    // destroy old chart
     if (chartRef.current) {
       chartRef.current.destroy();
     }
-    
-    // --- Chart Configuration ---
+
     chartRef.current = new Chart(ctx, {
+
       type: "doughnut",
+
       data: {
+
         datasets: [
           {
-            // Data for the colored arc segments
-            data: [...dataSegments, totalGaugeValue - dataSegments.reduce((a, b) => a + b, 0)], // 33, 33, 34
-            backgroundColor: ["#28a745", "#ffc107", "#dc3545", "#e5e7eb"], // Green, Yellow, Red, Gray (for hiding lower half)
+
+            data: [
+              ...dataSegments,
+              totalGaugeValue -
+                dataSegments.reduce(
+                  (a, b) => a + b,
+                  0
+                ),
+            ],
+
+            backgroundColor: [
+              "#22c55e",
+              "#facc15",
+              "#ef4444",
+              "#e5e7eb",
+            ],
+
             borderWidth: 0,
-            cutout: "80%", 
-            circumference: 180, // Half circle
-            rotation: 270, // Start chart at 6 o'clock position (12 o'clock is 0)
-            value: value // ⭐ Pass the dynamic value here for the plugin
+
+            cutout: "80%",
+
+            circumference: 180,
+
+            rotation: 270,
+
+            value: gaugeValue,
           },
         ],
       },
+
       options: {
+
         responsive: true,
+
         maintainAspectRatio: false,
+
         plugins: {
-          tooltip: { enabled: false },
-          legend: { display: false },
-          title: { display: false },
+
+          tooltip: {
+            enabled: false,
+          },
+
+          legend: {
+            display: false,
+          },
         },
+
         layout: {
-            padding: {
-                bottom: 10
-            }
+          padding: {
+            top: 10,
+            bottom: 10,
+          },
         },
-        // ⭐ Enable animation for the needle movement
-        animation: { 
-            animateRotate: true, 
-            duration: 1200,
-            animateScale: false 
+
+        animation: {
+          animateRotate: true,
+          duration: 1200,
         },
       },
-      plugins: [ needlePlugin ], // ⭐ Inject the custom needle plugin
+
+      plugins: [needlePlugin],
     });
 
-    // Cleanup function
     return () => {
-        if (chartRef.current) {
-            chartRef.current.destroy();
-        }
-    };
-  }, [value]); // ⭐ Re-run effect whenever 'value' changes
 
-  const getStatusText = (score) => {
-    if (score <= 33) return "Low Stress";
-    if (score <= 66) return "Moderate Stress";
-    return "High Stress";
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+
+  }, [gaugeValue]);
+
+  // =========================
+  // COLOR
+  // =========================
+
+  const getStatusColor = () => {
+
+    if (gaugeValue <= 33)
+      return "#22c55e";
+
+    if (gaugeValue <= 66)
+      return "#f59e0b";
+
+    return "#ef4444";
   };
-  
-  const getStatusColor = (score) => {
-    if (score <= 33) return "#28a745";
-    if (score <= 66) return "#ffc107";
-    return "#dc3545";
-  };
+
+  // =========================
+  // UI
+  // =========================
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: "350px", height: "220px", margin: "0 auto" }}>
-      <canvas ref={canvasRef}></canvas>
+
+    <div
+      className="gauge-wrapper"
+    >
+
+      <canvas
+        ref={canvasRef}
+      ></canvas>
+
       <div
-        style={{
-          position: "absolute",
-          top: "60%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          textAlign: "center",
-          fontWeight: "600",
-          width: "100%",
-          color: getStatusColor(value)
-        }}
+        className="gauge-center-text"
       >
-        <div style={{ fontSize: "2.5rem" }}>{value}%</div>
-        <div style={{ fontSize: "1.2rem", marginTop: "5px" }}>{getStatusText(value)}</div>
+
+        <div
+          className="gauge-label"
+          style={{
+            color: getStatusColor(),
+          }}
+        >
+          {label}
+        </div>
+
+        <div className="gauge-subtitle">
+          Stress Analysis Result
+        </div>
+
       </div>
+
     </div>
   );
 };

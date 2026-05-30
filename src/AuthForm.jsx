@@ -115,6 +115,7 @@ function AuthForm({ onLoginSuccess }) {
   };
 
   return (
+    <div className="auth-page">
     <div className={`container ${isRightPanelActive ? 'right-panel-active' : ''}`}>
 
       {/* SIGN UP */}
@@ -170,6 +171,7 @@ function AuthForm({ onLoginSuccess }) {
           {message}
         </div>
       )}
+    </div>
     </div>
   );
 }

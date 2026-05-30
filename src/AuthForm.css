@@ -11,7 +11,16 @@ body {
   height: 100vh;
   margin: 0;
 }
+.auth-page {
+  width: 100%;
+  min-height: 100vh;
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+}
 .container {
   background: #fff;
   border-radius: 10px;
