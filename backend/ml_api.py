@@ -3,7 +3,10 @@ import joblib
 import pandas as pd
 import tensorflow as tf
 import numpy as np
+import traceback
+import subprocess
 import librosa
+import soundfile as sf
 
 from PIL import Image
 from flask import Flask, request, jsonify
@@ -60,18 +63,41 @@ def preprocess_face_image(image_file):
     return img_array
 
 def extract_mfcc_features(audio_path, max_pad=300):
-    """
-    Loads raw voice file, extracts acoustic MFCCs, and aligns width lengths symmetrically
-    """
-    y, sr = librosa.load(audio_path, sr=None)
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
-    
+
+    y, sr = librosa.load(audio_path, sr=22050)
+
+    duration = librosa.get_duration(y=y, sr=sr)
+
+    print(f"\n🎙️ Audio Duration: {round(duration,2)} sec")
+
+    # Minimum 3 seconds required
+    if duration < 3:
+        raise Exception(
+            f"Audio too short ({round(duration,2)} sec). Please record at least 3 seconds."
+        )
+
+    # Noise reduction
+    y = librosa.effects.preemphasis(y)
+
+    # Normalize volume
+    y = librosa.util.normalize(y)
+
+    mfcc = librosa.feature.mfcc(
+        y=y,
+        sr=sr,
+        n_mfcc=40
+    )
+
     if mfcc.shape[1] < max_pad:
         pad_width = max_pad - mfcc.shape[1]
-        mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
+        mfcc = np.pad(
+            mfcc,
+            ((0, 0), (0, pad_width)),
+            mode='constant'
+        )
     else:
         mfcc = mfcc[:, :max_pad]
-        
+
     return mfcc
 
 
@@ -145,11 +171,18 @@ def predict_face_stress():
         
         processed_image = preprocess_face_image(image)
         predictions = face_model.predict(processed_image)
-        
+
+        all_emotions = {}
+
+        for i, emotion_name in enumerate(FACE_CLASSES):
+             all_emotions[emotion_name] = round(
+                float(predictions[0][i]) * 100,
+                 2
+            )
+
         predicted_index = int(np.argmax(predictions[0]))
         confidence = float(np.max(predictions[0]) * 100)
         emotion = FACE_CLASSES[predicted_index]
-
         if emotion in ["Happy", "Neutral"]:
             stress_label = "Low Stress"
             predicted_score = 25
@@ -163,11 +196,16 @@ def predict_face_stress():
         response = {
             "emotion": emotion,
             "confidence": round(confidence, 2),
+            "all_emotions": all_emotions,
             "stress_label": stress_label,
             "predicted_score": predicted_score
         }
         
         print(f"🎯 [Flask Engine] Generated Facial Outcome -> Emotion: {emotion} | Score: {predicted_score}")
+        print("\n📊 Face Probabilities")
+
+        for emo, prob in all_emotions.items():
+            print(f"{emo}: {prob}%")
         return jsonify(response)
     except Exception as e:
         print("\n❌ FACE API ERROR:", str(e))
@@ -180,21 +218,57 @@ def predict_voice_stress():
             return jsonify({"error": "No audio file uploaded"}), 400
 
         audio_file = request.files["audio"]
+        print("Filename:", audio_file.filename)
+        print("Content Type:", audio_file.content_type)
         print(f"\n🎙️ [Flask Engine] Incoming raw buffer processing stream for file: {audio_file.filename}")
         
-        temp_path = "temp_voice_input.wav"
+        temp_path = "temp_voice_input.webm"
         audio_file.save(temp_path)
+        with open(temp_path, "rb") as f:
+            print("Header:", f.read(20))
+        print("File exists:", os.path.exists(temp_path))
+        print("File size:", os.path.getsize(temp_path), "bytes")
+        wav_path = "converted_voice.wav"
 
-        features = extract_mfcc_features(temp_path)
+        FFMPEG_PATH = r"C:\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin\ffmpeg.exe"
+        subprocess.run(
+            [
+                FFMPEG_PATH,
+                "-y",
+                "-i",
+                temp_path,
+                wav_path
+            ],
+            check=True
+        )
+
+        print("✅ Audio converted successfully")
+        print("Converted file exists:", os.path.exists(wav_path))
+        print("Converted size:", os.path.getsize(wav_path))
+
+        features = extract_mfcc_features(wav_path)
+  
         features = features[..., np.newaxis][np.newaxis, np.newaxis, ...]
 
         predictions = voice_model.predict(features)
+
+        all_tones = {}
+
+        for i, tone_name in enumerate(VOICE_CLASSES):
+            all_tones[tone_name] = round(
+                float(predictions[0][i]) * 100,
+                2
+            )
+
         predicted_index = int(np.argmax(predictions[0]))
         confidence = float(np.max(predictions[0]) * 100)
         detected_tone = VOICE_CLASSES[predicted_index]
 
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
 
         if detected_tone in ["calm", "happy"]:
             stress_label = "Low Stress"
@@ -209,14 +283,19 @@ def predict_voice_stress():
         response = {
             "detected_tone": detected_tone,
             "confidence": round(confidence, 2),
+            "all_tones": all_tones,
             "stress_label": stress_label,
             "predicted_score": predicted_score
         }
-        
         print(f"🎯 [Flask Engine] Generated Acoustic Outcome -> Tone: {detected_tone} | Score: {predicted_score}")
+        print("\n📊 Voice Probabilities")
+
+        for tone, prob in all_tones.items():
+            print(f"{tone}: {prob}%")
         return jsonify(response)
     except Exception as e:
-        print("\n❌ VOICE API ERROR:", str(e))
+        print("\n❌ VOICE API ERROR:")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 # ==========================================
 # 4. COMBINED MULTI-MODAL ENDPOINT (80/10/10)
@@ -268,4 +347,9 @@ def predict_combined_stress():
 # RUN SERVER
 # ==========================================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(
+    host="0.0.0.0",
+    port=5001,
+    debug=True,
+    use_reloader=False
+)

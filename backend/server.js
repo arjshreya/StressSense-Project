@@ -283,12 +283,340 @@ app.get('/api/get-history/:userId', async (req, res) => {
   }
 });
 
-// ------------------- Authentication Routes -------------------
-app.post('/api/forgot-password', async (req, res) => { /* Entirely untouched */ });
-app.post('/api/reset-password/:token', async (req, res) => { /* Entirely untouched */ });
-app.post('/api/register', async (req, res) => { /* Entirely untouched */ });
-app.post('/api/login', async (req, res) => { /* Entirely untouched */ });
-app.post('/api/update-profile', async (req, res) => { /* Entirely untouched */ });
+// // ---------------------------------------------------
+
+// 1. SEND PASSWORD RESET EMAIL
+
+// ---------------------------------------------------
+
+app.post('/api/forgot-password', async (req, res) => {
+
+  try {
+
+    const { email } = req.body;
+
+
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+
+      return res.status(200).json({
+
+        message:
+
+          "If a matching account was found, a password reset link has been sent.",
+
+      });
+
+    }
+
+
+
+    const resetToken = jwt.sign(
+
+      { id: user._id },
+
+      process.env.JWT_SECRET,
+
+      { expiresIn: '1h' }
+
+    );
+
+
+
+    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+
+
+
+    const transporter = nodemailer.createTransport({
+
+      service: 'gmail',
+
+      auth: {
+
+        user: process.env.EMAIL_USER,
+
+        pass: process.env.EMAIL_PASS,
+
+      },
+
+    });
+
+
+
+    await transporter.sendMail({
+
+      to: user.email,
+
+      subject: 'StressSense Password Reset Request',
+
+      html: `
+
+        <p>You requested a password reset for your StressSense account.</p>
+
+        <p>Click <a href="${resetLink}">this link</a> to reset your password:</p>
+
+        <p>The link expires in 1 hour.</p>
+
+      `,
+
+    });
+
+
+
+    res.status(200).json({
+
+      message:
+
+        "If a matching account was found, a password reset link has been sent.",
+
+    });
+
+
+
+  } catch (err) {
+
+    console.error("Forgot Password Error:", err);
+
+    res.status(500).json({ message: "Server error. Could not send reset email." });
+
+  }
+
+});
+
+
+
+// ---------------------------------------------------
+
+// 2. RESET PASSWORD USING TOKEN
+
+// ---------------------------------------------------
+
+app.post('/api/reset-password/:token', async (req, res) => {
+
+  try {
+
+    const { password } = req.body;
+
+    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET);
+
+
+
+    const user = await User.findById(decoded.id);
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+
+
+    user.password = password; // hashing done in model pre-save hook
+
+    await user.save();
+
+
+
+    res.status(200).json({ message: "Password successfully reset." });
+
+
+
+  } catch (err) {
+
+    console.error("Reset Password Error:", err);
+
+    res.status(400).json({ message: "Invalid or expired reset link." });
+
+  }
+
+});
+
+
+
+// ---------------------------------------------------
+
+// 3. REGISTER USER
+
+// ---------------------------------------------------
+
+app.post('/api/register', async (req, res) => {
+
+  try {
+
+    const { name, email, password } = req.body;
+
+
+
+    if (!validateNameFormat(name))
+
+      return res.status(400).json({ message: "Name must contain only letters." });
+
+
+
+    if (!validateEmailFormat(email))
+
+      return res.status(400).json({ message: "Invalid email format." });
+
+
+
+    if (!validatePasswordStrength(password))
+
+      return res.status(400).json({
+
+        message:
+
+          "Password must be 8+ chars with letters, numbers & symbols.",
+
+      });
+
+
+
+    const existing = await User.findOne({ email });
+
+    if (existing)
+
+      return res.status(409).json({ message: "User already exists." });
+
+
+
+    const newUser = new User({ name, email, password });
+
+    await newUser.save();
+
+
+
+    res.status(201).json({ message: "Registration successful!" });
+
+
+
+  } catch (err) {
+
+    console.error("Registration error:", err);
+
+    res.status(500).json({ message: "Server error during registration." });
+
+  }
+
+});
+
+
+
+// ---------------------------------------------------
+
+// 4. LOGIN USER
+
+// ---------------------------------------------------
+
+app.post('/api/login', async (req, res) => {
+
+  try {
+
+    const { email, password } = req.body;
+
+
+
+    const user = await User.findOne({ email });
+
+    if (!user)
+
+      return res.status(400).json({ message: "Invalid credentials." });
+
+
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match)
+
+      return res.status(400).json({ message: "Invalid credentials." });
+
+
+
+    const assessmentCount = await Assessment.countDocuments({ userId: user._id });
+
+
+
+    res.status(200).json({
+
+      message: "Login successful!",
+
+      hasHistory: assessmentCount > 0,
+
+      userData: {
+
+        name: user.name,
+
+        email: user.email,
+
+        userId: user._id,
+
+        profileImageBase64: user.profileImageBase64 || null,
+
+      },
+
+    });
+
+
+
+  } catch (err) {
+
+    console.error("Login error:", err);
+
+    res.status(500).json({ message: "Server error during login." });
+
+  }
+
+});
+
+
+
+// ---------------------------------------------------
+
+// 5. UPDATE PROFILE DATA (Name + Image)
+
+// ---------------------------------------------------
+
+app.post('/api/update-profile', async (req, res) => {
+
+  try {
+
+    const { userId, name, profileImageBase64 } = req.body;
+
+
+
+    const updatedUser = await User.findByIdAndUpdate(
+
+      userId,
+
+      { name, profileImageBase64 },
+
+      { new: true, runValidators: true }
+
+    );
+
+
+
+    if (!updatedUser)
+
+      return res.status(404).json({ message: "User not found." });
+
+
+
+    res.status(200).json({
+
+      message: "Profile saved successfully!",
+
+      userData: updatedUser,
+
+    });
+
+
+
+  } catch (err) {
+
+    console.error("Profile Update Error:", err);
+
+    res.status(500).json({ message: "Failed to update profile." });
+
+  }
+});
 
 // ---------------------------------------------------
 //  START SERVER

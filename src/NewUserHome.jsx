@@ -11,7 +11,8 @@ function NewUserHome() {
   }, []);
 
   const [message, setMessage] = useState("");
-
+  const [recordingStartTime, setRecordingStartTime] = useState(null);
+  const MIN_RECORDING_SECONDS = 5;
   // ⭐ NEW STATE TRACKERS: Hold the model numbers once calculated
   const [faceScore, setFaceScore] = useState(0);
   const [voiceScore, setVoiceScore] = useState(0);
@@ -126,49 +127,114 @@ function NewUserHome() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true }
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 44100,
+        }
       });
+  
       mediaRecorderRef.current = new MediaRecorder(stream);
+  
       audioChunksRef.current = [];
+  
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
+  
       mediaRecorderRef.current.start();
+  
+      setRecordingStartTime(Date.now());
       setIsRecording(true);
-      setMessage("Recording vocal frequencies...");
+  
+      setMessage(
+        "Speak naturally for at least 5 seconds in a quiet environment."
+      );
+  
     } catch (err) {
       setMessage("Microphone access denied");
     }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    mediaRecorderRef.current.onstop = () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      reader.onloadend = async () => {
-        setCapturedAudioBase64(reader.result);
-        setMessage("Voice file compiled. Processing acoustic features...");
 
-        // ⭐ FIXED: Dispatch vocal wav file via form stream to backend instantly
+    const duration =
+      (Date.now() - recordingStartTime) / 1000;
+  
+    if (duration < MIN_RECORDING_SECONDS) {
+  
+      mediaRecorderRef.current.stop();
+  
+      setIsRecording(false);
+  
+      setMessage(
+        `Audio too short (${duration.toFixed(1)} sec). Please record at least 5 seconds and try again.`
+      );
+  
+      return;
+    }
+  
+    mediaRecorderRef.current.stop();
+  
+    mediaRecorderRef.current.onstop = () => {
+  
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: "audio/webm"
+      });
+  
+      const reader = new FileReader();
+  
+      reader.readAsDataURL(audioBlob);
+  
+      reader.onloadend = async () => {
+  
+        setCapturedAudioBase64(reader.result);
+  
+        setMessage(
+          "Voice file compiled. Processing acoustic features..."
+        );
+  
         const audioForm = new FormData();
-        audioForm.append("audio", audioBlob, "voice_input.wav");
+  
+        audioForm.append(
+          "audio",
+          audioBlob,
+          "voice_input.webm"
+        );
+  
         try {
-          const res = await axios.post("/api/predict-voice", audioForm, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-          setVoiceScore(res.data.predicted_score); // Save to state layer
-          setMessage(`Voice analysis complete! Tone: ${res.data.detected_tone}`);
+  
+          const res = await axios.post(
+            "/api/predict-voice",
+            audioForm,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data"
+              }
+            }
+          );
+  
+          setVoiceScore(res.data.predicted_score);
+  
+          setMessage(
+            `Voice analysis complete! Tone: ${res.data.detected_tone}`
+          );
+  
         } catch (err) {
+  
           console.error(err);
-          setMessage("Acoustic pipeline analysis failed.");
+  
+          setMessage(
+            "Acoustic pipeline analysis failed."
+          );
         }
       };
     };
+  
     setIsRecording(false);
   };
-
   // =====================================
   // SUBMIT FINAL EVALUATION
   // =====================================
@@ -331,6 +397,15 @@ function NewUserHome() {
 
               <div className="media-card">
                 <h3>Voice Recording</h3>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#666",
+                    marginBottom: "10px"
+                  }}
+                >
+                   Speak continuously for at least 5 seconds in a quiet environment.
+                </p>
                 {!isRecording ? (
                   <button type="button" className="media-btn" onClick={startRecording}>Start Recording</button>
                 ) : (

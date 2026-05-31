@@ -31,12 +31,16 @@ function AppWrapper() {
     navigate('/');
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (hasHistory) => {
     setIsLoggedIn(true);
-    setHasHistory(true);
-    navigate('/dashboard/existing');
-  };
+    setHasHistory(hasHistory);
   
+    if (hasHistory) {
+      navigate('/dashboard/existing');
+    } else {
+      navigate('/dashboard/new');
+    }
+  };
   const handleRegisterSuccess = () => {
     setIsLoggedIn(false);
     setHasHistory(false);

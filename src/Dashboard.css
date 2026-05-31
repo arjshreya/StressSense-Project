@@ -54,7 +54,7 @@ html {
   display: block; /* ⭐ CHANGED FROM FLEX TO BLOCK: Prevents child squeezing and content cutting */
   padding-left: 20px;
   padding-right: 20px;
-  padding-top: 2100px;
+  padding-top: 2220px;
   padding-bottom: 50px;
   background:
   linear-gradient(
