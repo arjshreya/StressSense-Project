@@ -1,0 +1,104 @@
+========================================================================
+             STRESSSENSE PROJECT - FULL SYSTEM SETUP GUIDE
+========================================================================
+
+This guide will help you set up and run the full-stack AI Mental Stress 
+Assessment system on your local machine.
+
+------------------------------------------------------------------------
+STEP 1: MACHINE LEARNING MODELS DOWNLOAD (CRITICAL)
+------------------------------------------------------------------------
+Because deep learning models (.h5) are too heavy for standard version 
+control, you must download the trained model files manually before 
+starting the servers.
+
+1. Download the Face and Voice model files from this link:
+   [PASTE YOUR GOOGLE DRIVE SHARE LINK HERE]
+
+2. Move the downloaded files into the following directory inside the project:
+   📁 MegaProject/backend/ml_model/
+
+3. Ensure the following files exist in that folder:
+   - student_stress_model.pkl  (Questionnaire Model)
+   - scaler.pkl                  (Questionnaire Scaler)
+   - face_model.h5              (Face CNN Model)
+   - mental_health_cnn_lstm.h5  (Voice CNN-LSTM Model)
+
+------------------------------------------------------------------------
+STEP 2: PYTHON FLASK ML SERVICE SETUP
+------------------------------------------------------------------------
+Open a terminal, navigate to the root directory of the project, and 
+run the following commands to configure the Python backend:
+
+1. Create a clean isolated Virtual Environment:
+   python -m venv .venv
+
+2. Activate the Virtual Environment:
+   - On Windows (PowerShell):   .venv\Scripts\Activate.ps1
+   - On Windows (CMD):          .venv\Scripts\activate.bat
+   - On Mac/Linux:              source .venv/bin/activate
+
+3. Install all required ML and audio processing libraries:
+   pip install --upgrade pip
+   pip install flask flask-cors pandas numpy pillow librosa scikit-learn joblib tensorflow
+
+4. Start the Python Machine Learning Server:
+   python ml_api.py
+
+   *The server will start running locally on http://127.0.0.1:5001
+
+------------------------------------------------------------------------
+STEP 3: NODE.JS EXPRESS BACKEND SETUP
+------------------------------------------------------------------------
+Open a SECOND terminal window, navigate to the backend folder, and configure 
+the API Gateway server:
+
+1. Navigate to the backend directory:
+   cd backend
+
+2. Install all required Node packages:
+   npm install express cors dotenv body-parser mongoose bcryptjs jsonwebtoken nodemailer axios multer
+
+3. Environment Variables Configuration:
+   Create a file named `.env` in this folder (backend/) and add your 
+   MongoDB Atlas connection string and email configurations:
+
+   PORT=5000
+   MONGODB_URI=your_mongodb_atlas_connection_string
+   JWT_SECRET=your_secret_key_string
+   EMAIL_USER=your_gmail_address
+   EMAIL_PASS=your_gmail_app_password
+
+4. Start the Node.js Server:
+   node server.js
+
+   *The server will start running locally on http://localhost:5000
+
+------------------------------------------------------------------------
+STEP 4: REACT.JS FRONTEND UI SETUP
+------------------------------------------------------------------------
+Open a THIRD terminal window, navigate to the frontend folder, and launch 
+the user interface dashboard:
+
+1. Navigate to the frontend directory:
+   cd frontend
+
+2. Install the User Interface dependencies:
+   npm install
+
+3. Start the React live-reloading development server:
+   npm start
+
+   *The interface will automatically open in your browser at http://localhost:3000
+
+------------------------------------------------------------------------
+SYSTEM OVERVIEW FOR VERIFICATION
+------------------------------------------------------------------------
+To run a successful assessment, all three terminals must remain open:
+- Port 3000: Frontend User Interface (React)
+- Port 5000: Core Application Logic & Database Gateway (Node.js)
+- Port 5001: Machine Learning Processing Engine (Python Flask)
+
+Ensure your laptop's Webcam and Microphone permissions are allowed in 
+the browser for the multi-modal audio/visual assessment layers to process.
+========================================================================
