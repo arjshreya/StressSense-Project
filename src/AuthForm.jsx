@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import './AuthForm.css';
 import axios from 'axios';
+import logoImg from "./logo.png";
 
 function AuthForm({ onLoginSuccess }) {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
@@ -54,7 +55,7 @@ function AuthForm({ onLoginSuccess }) {
     return true;
   };
 
-  // ⭐ UPDATED REGISTER SUBMIT ⭐
+ 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -72,11 +73,10 @@ function AuthForm({ onLoginSuccess }) {
     axios.post('/api/register', payload)
       .then(res => {
 
-        // 🔥 IMPORTANT:
         // After successful registration → go to login panel
         setIsRightPanelActive(false);
 
-        // 🔥 Inform user to login manually
+        //Inform user to login manually
         setMessage("Registration successful! Please login.");
 
       })
@@ -107,6 +107,11 @@ function AuthForm({ onLoginSuccess }) {
 
       localStorage.setItem('userData', JSON.stringify(res.data.userData));
 
+      localStorage.setItem(
+        'hasHistory',
+        String(res.data.hasHistory)
+      );
+
       onLoginSuccess(res.data.hasHistory);
 
     } catch (error) {
@@ -116,6 +121,18 @@ function AuthForm({ onLoginSuccess }) {
 
   return (
     <div className="auth-page">
+
+    <div className="brand-header">
+      <div className="brand-logo-container">
+      <img 
+            src={logoImg} 
+            alt="StressSense Main Logo" 
+            className="auth-logo-img" 
+      />
+      <h1>StressSense</h1>
+    </div>
+      <p>MultiModal Stress Pediction System</p>
+    </div>  
     <div className={`container ${isRightPanelActive ? 'right-panel-active' : ''}`}>
 
       {/* SIGN UP */}

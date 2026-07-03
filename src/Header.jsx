@@ -1,15 +1,18 @@
 // src/Header.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Header.css";
 
-function Header({ hasHistory }) {
+function Header({ hasHistory, handleLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const logout = () => {
-    localStorage.removeItem("userData");
-    navigate("/");
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const handleLogoClick = () => {
+    navigate(hasHistory ? "/dashboard/existing" : "/dashboard/welcome");
   };
 
   const activeClass = (path) =>
@@ -17,19 +20,14 @@ function Header({ hasHistory }) {
 
   return (
     <header className="header-nav">
-      {/* LOGO */}
-      <div
-        className="logo"
-        onClick={() => navigate(hasHistory ? "/dashboard/existing" : "/dashboard/new")}
-      >
+      {/* Restored back to the original simple text layout */}
+      <div className="logo" onClick={handleLogoClick}>
         StressSense
       </div>
 
       <nav className="nav-links">
-
-        {hasHistory ? (
+        {hasHistory && (
           <>
-            {/* EXISTING USER — HOME */}
             <button
               onClick={() => navigate("/dashboard/existing")}
               className={activeClass("/dashboard/existing")}
@@ -37,22 +35,11 @@ function Header({ hasHistory }) {
               Home
             </button>
 
-            {/* TEST STRESS (go to new assessment) */}
             <button
               onClick={() => navigate("/dashboard/new")}
               className={activeClass("/dashboard/new")}
             >
               Test Stress
-            </button>
-          </>
-        ) : (
-          <>
-            {/* NEW USER — ASSESSMENT HOME */}
-            <button
-              onClick={() => navigate("/dashboard/new")}
-              className={activeClass("/dashboard/new")}
-            >
-              Assessment Home
             </button>
           </>
         )}
@@ -65,10 +52,65 @@ function Header({ hasHistory }) {
           Profile
         </button>
 
-        {/* LOGOUT */}
-        <button className="logout-btn" onClick={logout}>
+        {/* LOGOUT BUTTON */}
+        <button
+          className="logout-btn"
+          onClick={() => setShowLogoutModal(true)}
+        >
           Logout
         </button>
+
+        {/* LOGOUT CONFIRM MODAL */}
+        {showLogoutModal && (
+          <div className="modal-overlay">
+            <div className="delete-modal">
+              <h3>Logout</h3>
+              <p>Are you sure you want to logout?</p>
+
+              <div className="modal-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setShowLogoutModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    setSuccessMessage("Logged out successfully.");
+                    setShowSuccessModal(true);
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SUCCESS MODAL */}
+        {showSuccessModal && (
+          <div className="modal-overlay">
+            <div className="delete-modal">
+              <h3>Success</h3>
+              <p>{successMessage}</p>
+
+              <div className="modal-buttons">
+                <button
+                  className="save-btn"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    handleLogout(); // actual logout here
+                  }}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );

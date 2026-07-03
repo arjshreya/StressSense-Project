@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Dashboard.css";
+import "./AssessmentQuestions.css";
 
 function NewUserHome() {
   const navigate = useNavigate();
@@ -10,51 +12,286 @@ function NewUserHome() {
     window.scrollTo(0, 0);
   }, []);
 
+  const { onAssessmentSubmit } = useOutletContext();
   const [message, setMessage] = useState("");
   const [recordingStartTime, setRecordingStartTime] = useState(null);
   const MIN_RECORDING_SECONDS = 5;
-  // ⭐ NEW STATE TRACKERS: Hold the model numbers once calculated
+  const [recordingAnimation, setRecordingAnimation] =
+  useState(false);
+  const [voiceCaptured, setVoiceCaptured] =
+  useState(false);
+  
+  // State variables tracking real-time sub-model scores
   const [faceScore, setFaceScore] = useState(0);
   const [voiceScore, setVoiceScore] = useState(0);
-
+  const [capturedImagePreview, setCapturedImagePreview] = useState(null);
   // =====================================
   // FORM DATA
   // =====================================
   const [formData, setFormData] = useState({
-    anxiety_level: 10,
-    self_esteem: 15,
-    depression: 13,
-    mental_health_history: "",
-    headache: "",
-    blood_pressure: "",
-    sleep_quality: "",
-    breathing_problem: "",
-    noise_level: "",
+    anxiety_level: 0,
+    self_esteem: 0,
+    depression: 0,
+    mental_health_history: null,
+    headache: null,
+    blood_pressure: null,
+    sleep_quality: null,
+    breathing_problem:null,
+    noise_level: null,
     living_conditions: "",
-    safety: "",
-    basic_needs: "",
-    academic_performance: "",
-    study_load: "",
-    teacher_student_relationship: "",
-    future_career_concerns: "",
-    social_support: "",
-    peer_pressure: "",
-    extracurricular_activities: "",
-    bullying: "",
+    safety: null,
+    basic_needs: null,
+    academic_performance: null,
+    study_load: null,
+    teacher_student_relationship: null,
+    future_career_concerns: null,
+    social_support: null,
+    peer_pressure: null,
+    extracurricular_activities: null,
+    bullying: null,
   });
 
-  const totalFields = Object.keys(formData).length;
-  const defaultValues = {
-    anxiety_level: 10, self_esteem: 15, depression: 13,
-    mental_health_history: 0, headache: 0, blood_pressure: 0, sleep_quality: 0,
-    breathing_problem: 0, noise_level: 0, living_conditions: 0, safety: 0,
-    basic_needs: 0, academic_performance: 0, study_load: 0, teacher_student_relationship: 0,
-    future_career_concerns: 0, social_support: 0, peer_pressure: 0, extracurricular_activities: 0, bullying: 0,
-  };
+  const questions = [
 
-  const completedFields = Object.keys(formData).filter((key) => formData[key] !== defaultValues[key]).length;
-  const progressPercentage = Math.round((completedFields / totalFields) * 100);
+    {
+      key: "anxiety_level",
+      question:
+        "How often do you find yourself worrying about everyday things?",
+      min: 0,
+      max: 21,
+      left: "Never",
+      right: "Always"
+    },
+  
+    {
+      key: "self_esteem",
+      question:
+        "How confident do you generally feel about yourself and your abilities?",
+      min: 0,
+      max: 30,
+      left: "Very Low Confidence",
+      right: "Very High Confidence"
+    },
+  
+    {
+      key: "depression",
+      question:
+        "How often have you been feeling emotionally drained lately?",
+      min: 0,
+      max: 27,
+      left: "Never",
+      right: "Always"
+    },
+  
+   
+    {
+      key: "mental_health_history",
+      question: "Have you faced emotional or mental health challenges in the past?",
+      options: [
+        "Never",
+        "Rarely",
+        "Sometimes",
+        "Often",
+        "Very Frequently"
+      ]
+    },
+    
+    {
+      key: "headache",
+      question: "How often do you experience headaches or tension during the week?",
+      options: [
+        "Never",
+        "Rarely",
+        "Sometimes",
+        "Often",
+        "Very Often"
+      ]
+    },
+    
+    {
+      key: "blood_pressure",
+      question: "How often do you feel physically tense or under pressure?",
+      options: [
+        "Very Relaxed",
+        "Mostly Relaxed",
+        "Moderately Tense",
+        "Very Tense",
+        "Extremely Tense"
+      ]
+    },
+    
+    {
+      key: "sleep_quality",
+      question: "How would you describe your sleep during the past week?",
+      options: [
+        "Very Poor",
+        "Poor",
+        "Average",
+        "Good",
+        "Excellent"
+      ]
+    },
+    
+    {
+      key: "breathing_problem",
+      question: "Do you ever feel shortness of breath when facing challenges?",
+      options: [
+        "Never",
+        "Rarely",
+        "Sometimes",
+        "Often",
+        "Very Often"
+      ]
+    },
+    
+    {
+      key: "noise_level",
+      question: "How distracting is the environment where you spend most of your day?",
+      options: [
+        "Very Quiet",
+        "Mostly Quiet",
+        "Moderately Noisy",
+        "Noisy",
+        "Very Noisy"
+      ]
+    },
+    
+    {
+      key: "living_conditions",
+      question: "How comfortable do you feel in your current living environment?",
+      options: [
+        "Very Uncomfortable",
+        "Uncomfortable",
+        "Average",
+        "Comfortable",
+        "Very Comfortable"
+      ]
+    },
+    
+    {
+      key: "safety",
+      question: "How safe and secure do you generally feel in your surroundings?",
+      options: [
+        "Very Unsafe",
+        "Unsafe",
+        "Neutral",
+        "Safe",
+        "Completely Safe"
+      ]
+    },
+    
+    {
+      key: "basic_needs",
+      question: "Are your daily needs such as food, rest, and resources being met?",
+      options: [
+        "Not At All",
+        "Rarely",
+        "Partially",
+        "Mostly",
+        "Completely"
+      ]
+    },
+    
+    {
+      key: "academic_performance",
+      question: "How satisfied are you with your recent academic performance?",
+      options: [
+        "Very Dissatisfied",
+        "Dissatisfied",
+        "Neutral",
+        "Satisfied",
+        "Very Satisfied"
+      ]
+    },
+    
+    {
+      key: "study_load",
+      question: "How manageable does your academic workload feel right now?",
+      options: [
+        "Very Difficult",
+        "Difficult",
+        "Manageable",
+        "Easy",
+        "Very Easy"
+      ]
+    },
+    
+    {
+      key: "teacher_student_relationship",
+      question: "How supported do you feel by your teachers or mentors?",
+      options: [
+        "Not Supported",
+        "Slightly Supported",
+        "Moderately Supported",
+        "Well Supported",
+        "Highly Supported"
+      ]
+    },
+    
+    {
+      key: "future_career_concerns",
+      question: "How worried are you about your future career or opportunities?",
+      options: [
+        "Not Worried",
+        "Slightly Worried",
+        "Moderately Worried",
+        "Very Worried",
+        "Extremely Worried"
+      ]
+    },
+    
+    {
+      key: "social_support",
+      question: "How much emotional support do you receive from family and friends?",
+      options: [
+        "No Support",
+        "Little Support",
+        "Moderate Support",
+        "Strong Support",
+        "Excellent Support"
+      ]
+    },
+    
+    {
+      key: "peer_pressure",
+      question: "Do you feel pressured by expectations from friends or classmates?",
+      options: [
+        "Never",
+        "Rarely",
+        "Sometimes",
+        "Often",
+        "Always"
+      ]
+    },
+    
+    {
+      key: "extracurricular_activities",
+      question: "How actively involved are you in activities outside academics?",
+      options: [
+        "Not Active",
+        "Slightly Active",
+        "Moderately Active",
+        "Active",
+        "Very Active"
+      ]
+    },
+    
+    {
+      key: "bullying",
+      question: "Have you experienced teasing, bullying, or unfair treatment recently?",
+      options: [
+        "Never",
+        "Rarely",
+        "Sometimes",
+        "Often",
+        "Very Frequently"
+      ]
+    }
+  
+  ];
 
+  const [currentQuestion, setCurrentQuestion] =
+  useState(0);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const videoRef = useRef(null);
@@ -101,19 +338,20 @@ function NewUserHome() {
 
     const imageData = canvas.toDataURL("image/jpeg");
     setCapturedImageBase64(imageData);
+    setCapturedImagePreview(imageData);
+    setMessage("✅ Face image captured successfully.");
     stopWebcam();
     setMessage("Face image captured. Analyzing structure...");
 
-    // ⭐ FIXED: Convert raw base64 data to blob and send to backend instantly
     canvas.toBlob(async (blob) => {
       const imageForm = new FormData();
       imageForm.append("image", blob, "webcam_snap.jpg");
       try {
-        const res = await axios.post("/api/predict-face", imageForm, {
+        const res = await axios.post("http://127.0.0.1:5001/predict_face_stress", imageForm, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        setFaceScore(res.data.predicted_score); // Save to state layer
-        setMessage(`Face analyzed! Emotion: ${res.data.emotion} (${res.data.stress_label})`);
+        setFaceScore(res.data.predicted_score); 
+        setMessage("Face analyzed! Emotion");
       } catch (err) {
         console.error(err);
         setMessage("Face analysis server tracking failed.");
@@ -125,6 +363,7 @@ function NewUserHome() {
   // AUDIO RECORDING SETUP
   // =====================================
   const startRecording = async () => {
+    setRecordingAnimation(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -137,7 +376,6 @@ function NewUserHome() {
       });
   
       mediaRecorderRef.current = new MediaRecorder(stream);
-  
       audioChunksRef.current = [];
   
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -145,96 +383,76 @@ function NewUserHome() {
       };
   
       mediaRecorderRef.current.start();
-  
+      setTimeout(() => {
+
+        if (
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state === "recording"
+        ) {
+          stopRecording();
+        }
+      
+      }, 5000);
+
       setRecordingStartTime(Date.now());
       setIsRecording(true);
-  
-      setMessage(
-        "Speak naturally for at least 5 seconds in a quiet environment."
-      );
-  
+      setMessage("Speak naturally for at least 5 seconds in a quiet environment.");
     } catch (err) {
       setMessage("Microphone access denied");
     }
   };
 
   const stopRecording = () => {
-
-    const duration =
-      (Date.now() - recordingStartTime) / 1000;
-  
+    const duration = (Date.now() - recordingStartTime) / 1000;
+    setRecordingAnimation(false);
     if (duration < MIN_RECORDING_SECONDS) {
-  
       mediaRecorderRef.current.stop();
-  
       setIsRecording(false);
-  
-      setMessage(
-        `Audio too short (${duration.toFixed(1)} sec). Please record at least 5 seconds and try again.`
-      );
-  
+      setMessage(`Audio too short (${duration.toFixed(1)} sec). Please record at least 5 seconds and try again.`);
       return;
     }
   
     mediaRecorderRef.current.stop();
-  
     mediaRecorderRef.current.onstop = () => {
-  
-      const audioBlob = new Blob(audioChunksRef.current, {
-        type: "audio/webm"
-      });
-  
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
       const reader = new FileReader();
   
       reader.readAsDataURL(audioBlob);
-  
       reader.onloadend = async () => {
-  
         setCapturedAudioBase64(reader.result);
-  
-        setMessage(
-          "Voice file compiled. Processing acoustic features..."
-        );
+        setVoiceCaptured(true);
+        setMessage("Voice file compiled. Processing acoustic features...");
   
         const audioForm = new FormData();
-  
-        audioForm.append(
-          "audio",
-          audioBlob,
-          "voice_input.webm"
-        );
+        audioForm.append("audio", audioBlob, "voice_input.webm");
   
         try {
-  
-          const res = await axios.post(
-            "/api/predict-voice",
-            audioForm,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data"
-              }
-            }
-          );
-  
+          const res = await axios.post("http://127.0.0.1:5001/predict_voice_stress", audioForm, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
           setVoiceScore(res.data.predicted_score);
-  
-          setMessage(
-            `Voice analysis complete! Tone: ${res.data.detected_tone}`
-          );
-  
+          setMessage("Voice analysis complete!");
         } catch (err) {
-  
           console.error(err);
-  
-          setMessage(
-            "Acoustic pipeline analysis failed."
-          );
+          setMessage("Acoustic pipeline analysis failed.");
         }
       };
     };
   
     setIsRecording(false);
   };
+  const progressPercentage =
+    currentQuestion >= questions.length
+      ? 100
+      : ((currentQuestion + 1) / questions.length) * 100;
+
+  const sliderQuestions = [
+    "anxiety_level",
+    "depression",
+    "self_esteem"
+  ];
+      
+      const currentQ = questions[currentQuestion];
   // =====================================
   // SUBMIT FINAL EVALUATION
   // =====================================
@@ -242,11 +460,39 @@ function NewUserHome() {
     e.preventDefault();
     setMessage("Processing combined assessment scores...");
 
+    setMessage("Saving assets and calculating final multi-modal matrix...");
     try {
       const userData = JSON.parse(localStorage.getItem("userData")) || {};
+      
+      let warningMessage = "";
+
+      const unanswered = Object.entries(formData)
+      .filter(([key, value]) => value === null || value === "")
+      .map(([key]) => key);
+
+      if (unanswered.length > 0) {
+        warningMessage +=
+        `${unanswered.length} questionnaire responses were skipped. `;
+    }
+
+      if (!capturedImageBase64 && !capturedAudioBase64) {
+        warningMessage =
+          "Prediction generated without face and voice analysis. Accuracy may be lower.";
+      }
+      else if (!capturedImageBase64) {
+        warningMessage =
+          "Prediction generated without face analysis. Accuracy may be slightly lower.";
+      }
+      else if (!capturedAudioBase64) {
+        warningMessage =
+          "Prediction generated without voice analysis. Accuracy may be slightly lower.";
+      }
 
       const payload = {
         userId: userData.userId,
+
+        warning: warningMessage,
+
         anxiety_level: formData.anxiety_level,
         self_esteem: formData.self_esteem,
         depression: formData.depression,
@@ -267,160 +513,338 @@ function NewUserHome() {
         peer_pressure: formData.peer_pressure,
         extracurricular_activities: formData.extracurricular_activities,
         bullying: formData.bullying,
-
         facialImageBase64: capturedImageBase64,
         voiceAudioBase64: capturedAudioBase64,
 
-        // ⭐ FIXED: Send the active state numerical scores to Node gateway
         face_score: faceScore,
         voice_score: voiceScore,
       };
 
-      console.log("📤 Sending Payload from Frontend:", payload);
-      const response = await axios.post("/api/assessment", payload);
-
+      console.log("📤 Sending Complete Payload directly to Asset Interceptor Route:", payload);
+      
+      const response = await axios.post("http://127.0.0.1:5000/api/assessment", payload);
+      
+      onAssessmentSubmit();
       navigate("/dashboard/results", { state: response.data });
     } catch (error) {
       console.error(error);
-      setMessage(error.response?.data?.message || "Prediction execution failed");
+      setMessage(error.response?.data?.message || "Prediction execution server tracking failed.");
     }
-  };
 
-  const renderSelect = (label, name, lowText, mediumText, highText) => (
-    <div className="form-input">
-      <label>{label}</label>
-      <select name={name} value={formData[name]} onChange={handleChange}>
-        <option value="">Select Option</option>
-        <option value="0">Low / Never / Good</option>
-        <option value="1">Mild</option>
-        <option value="2">Moderate</option>
-        <option value="3">High</option>
-        <option value="4">Very High</option>
-        <option value="5">Severe</option>
-      </select>
-      <div className="guide-text">
-        <span><strong>Low:</strong> {lowText}</span>
-        <span><strong>Medium:</strong> {mediumText}</span>
-        <span><strong>High:</strong> {highText}</span>
-      </div>
-    </div>
-  );
-
-  const renderRangeInput = (label, name, min, max) => (
-    <div className="form-input">
-      <label>{label}</label>
-      <input type="range" min={min} max={max} name={name} value={formData[name]} onChange={handleChange} />
-      <div className="range-value">Selected Value: <strong>{formData[name]}</strong></div>
-    </div>
-  );
+    
+    };
 
   return (
     <div className="assessment-page">
       <div className="assessment-card">
-        <h1 className="form-name">AI Mental Stress Assessment</h1>
-        <p className="subtitle">Answer honestly for better prediction accuracy.</p>
-
+    
+        <form onSubmit={handleSubmit} noValidate>
         <div className="progress-container">
-          <div className="progress-header">
-            <span>Assessment Progress</span>
-            <span>{progressPercentage}% Completed</span>
-          </div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progressPercentage}%` }} />
-          </div>
+
+        <div className="progress-text">
+          Question {Math.min(currentQuestion + 1, questions.length)}
+          {" "}of{" "}
+          {questions.length}
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="section-divider">
-            <h2>Mental Health</h2>
-            <p>Questions related to emotions, anxiety and psychological wellbeing.</p>
-          </div>
-          <div className="form-grid">
-            {renderRangeInput("How anxious or worried do you usually feel?", "anxiety_level", 0, 21)}
-            {renderRangeInput("How confident do you feel about yourself?", "self_esteem", 0, 30)}
-            {renderRangeInput("How often do you feel sadness or hopelessness?", "depression", 0, 27)}
-            {renderSelect("Do you have a previous mental health history?", "mental_health_history", "No history", "Some issues before", "Frequent mental health issues")}
-          </div>
+        <div className="progress-bar">
 
-          <div className="section-divider">
-            <h2>Physical Health</h2>
-            <p>Questions related to body condition, sleep and physical stress symptoms.</p>
-          </div>
-          <div className="form-grid">
-            {renderSelect("How often do you experience headaches?", "headache", "Rarely", "Sometimes", "Frequently")}
-            {renderSelect("How often do you feel pressure physically?", "blood_pressure", "Relaxed", "Moderate tension", "High tension")}
-            {renderSelect("How would you rate your sleep quality?", "sleep_quality", "Good sleep", "Average sleep", "Poor sleep")}
-            {renderSelect("Do you experience breathing discomfort?", "breathing_problem", "Never", "Occasionally", "Frequently")}
-          </div>
+          <div
+            className="progress-fill"
+            style={{
+              width: `${progressPercentage}%`
+            }}
+          />
 
-          <div className="section-divider">
-            <h2>Environment & Lifestyle</h2>
-            <p>Questions related to surroundings, safety and lifestyle conditions.</p>
-          </div>
-          <div className="form-grid">
-            {renderSelect("How noisy is your environment?", "noise_level", "Quiet", "Moderately noisy", "Highly noisy")}
-            {renderSelect("How comfortable are your living conditions?", "living_conditions", "Comfortable", "Average", "Very uncomfortable")}
-            {renderSelect("How safe do you feel?", "safety", "Very safe", "Moderately safe", "Unsafe")}
-            {renderSelect("Are your daily needs fulfilled?", "basic_needs", "Completely fulfilled", "Partially fulfilled", "Not fulfilled")}
-          </div>
+        </div>
 
-          <div className="section-divider">
-            <h2>Academic & Social Life</h2>
-            <p>Questions related to studies, relationships and social support.</p>
-          </div>
-          <div className="form-grid">
-            {renderSelect("How satisfied are you academically?", "academic_performance", "Satisfied", "Average", "Very dissatisfied")}
-            {renderSelect("How heavy is your workload?", "study_load", "Light", "Moderate", "Very heavy")}
-            {renderSelect("Teacher-student relationship?", "teacher_student_relationship", "Very supportive", "Average", "Poor relationship")}
-            {renderSelect("How worried are you about career?", "future_career_concerns", "Not worried", "Moderately worried", "Extremely worried")}
-            {renderSelect("How much emotional support do you receive?", "social_support", "Strong support", "Average support", "No support")}
-            {renderSelect("How much peer pressure do you experience?", "peer_pressure", "No pressure", "Moderate pressure", "Extreme pressure")}
-            {renderSelect("How active are you in extracurricular activities?", "extracurricular_activities", "Very active", "Sometimes active", "Not active")}
-            {renderSelect("Have you experienced bullying?", "bullying", "Never", "Sometimes", "Frequently")}
-          </div>
+        </div>
+          <div className="assistant-header">
+          <h2>StressSense Assistant</h2>
 
+          <p className="assistant-intro">
+          👋 Hi there!
+
+          I'm StressSense AI.
+
+          I'll ask a few questions to better understand
+          your emotional well-being and stress level.
+
+          There are no right or wrong answers.
+          Just answer honestly.
+          </p>
+
+          <p>
+            Let's have a quick conversation about how things have been going lately.
+          </p>
+        </div>
+        {currentQuestion < questions.length && (
+  <div className="question-card">
+
+    <div className="question-text">
+      {questions[currentQuestion].question}
+    </div>
+
+    {sliderQuestions.includes(
+      questions[currentQuestion].key
+    ) ? (
+
+      <>
+        <div className="slider-container">
+
+          <input
+            className="stress-slider"
+            type="range"
+            min={questions[currentQuestion].min}
+            max={questions[currentQuestion].max}
+            value={
+              formData[
+                questions[currentQuestion].key
+              ]
+            }
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                [
+                  questions[currentQuestion].key
+                ]: Number(e.target.value)
+              })
+            }
+          />
+
+        </div>
+
+        <div className="slider-labels">
+          <span className="left-label">
+            {questions[currentQuestion].left}
+          </span>
+
+          <span className="right-label">
+            {questions[currentQuestion].right}
+          </span>
+        </div>
+
+        <div className="slider-value">
+          Selected Value:
+          {" "}
+          {
+            formData[
+              questions[currentQuestion].key
+            ]
+          }
+        </div>
+      </>
+
+    ) : (
+
+      <div className="options-container">
+      {currentQ.options.map((label, index) => (
+
+          <button
+            key={index}
+            type="button"
+            className={
+              formData[
+                questions[currentQuestion].key
+              ] === index + 1
+                ? "answer-option selected"
+                : "answer-option"
+            }
+            onClick={() =>
+              setFormData({
+                ...formData,
+                [
+                  questions[currentQuestion].key
+                ]: index + 1
+              })
+            }
+          >
+            {label}
+          </button>
+
+        ))}
+
+      </div>
+
+    )}
+
+    <div className="navigation-buttons">
+
+      <button
+        type="button"
+        disabled={currentQuestion === 0}
+        onClick={() =>
+          setCurrentQuestion(
+            currentQuestion - 1
+          )
+        }
+      >
+        Previous
+      </button>
+
+      {currentQuestion < questions.length - 1 ? (
+
+        <button
+          type="button"
+          onClick={() =>
+            setCurrentQuestion(
+              currentQuestion + 1
+            )
+          }
+        >
+          Next
+        </button>
+
+      ) : (
+
+        <button
+          type="button"
+          onClick={() =>
+            setCurrentQuestion(
+              questions.length
+            )
+          }
+        >
+          Continue
+        </button>
+
+      )}
+
+    </div>
+
+  </div>
+)}
+{currentQuestion >= questions.length && (
+  
+        <>
           <div className="media-section">
-            <h2>Optional Face & Voice Analysis</h2>
+            <h2>Face & Voice Analysis</h2>
+
             <div className="media-grid">
+
+              {/* Face Capture */}
               <div className="media-card">
                 <h3>Face Capture</h3>
-                <video ref={videoRef} autoPlay muted playsInline className="video-preview" style={{ display: isCapturing ? "block" : "none" }} />
+
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="video-preview"
+                  style={{
+                    display: isCapturing ? "block" : "none",
+                  }}
+                />
+
                 {!isCapturing ? (
-                  <button type="button" className="media-btn" onClick={startWebcam}>Start Webcam</button>
+                  <button
+                    type="button"
+                    className="media-btn"
+                    onClick={startWebcam}
+                  >
+                    Start Webcam
+                  </button>
                 ) : (
                   <div className="button-group">
-                    <button type="button" className="capture-btn" onClick={captureImage}>Capture</button>
-                    <button type="button" className="cancel-btn" onClick={stopWebcam}>Stop</button>
+                    <button
+                      type="button"
+                      className="capture-btn"
+                      onClick={captureImage}
+                    >
+                      Capture
+                    </button>
+
+                    <button
+                      type="button"
+                      className="cancel-btn"
+                      onClick={stopWebcam}
+                    >
+                      Stop
+                    </button>
+                  </div>
+                )}
+                {capturedImagePreview && (
+                  <div className="captured-preview">
+                    <img
+                      src={capturedImagePreview}
+                      alt="Captured Face"
+                      className="captured-image"
+                    />
+                    <p className="success-text">
+                      ✅ Face captured successfully
+                    </p>
                   </div>
                 )}
               </div>
 
+              {/* Voice Recording */}
               <div className="media-card">
                 <h3>Voice Recording</h3>
+
                 <p
                   style={{
                     fontSize: "13px",
                     color: "#666",
-                    marginBottom: "10px"
+                    marginBottom: "10px",
                   }}
                 >
-                   Speak continuously for at least 5 seconds in a quiet environment.
+                  Speak continuously for at least
+                  5 seconds in a quiet environment.
                 </p>
+                {recordingAnimation && (
+
+                    <div className="voice-wave">
+
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+
+                    </div>
+
+                )}
                 {!isRecording ? (
-                  <button type="button" className="media-btn" onClick={startRecording}>Start Recording</button>
+                  <button
+                    type="button"
+                    className="media-btn"
+                    onClick={startRecording}
+                  >
+                    Start Recording
+                  </button>
                 ) : (
-                  <button type="button" className="capture-btn" onClick={stopRecording}>Stop Recording</button>
+                  <button
+                    type="button"
+                    className="capture-btn"
+                    onClick={stopRecording}
+                  >
+                    Stop Recording
+                  </button>
                 )}
               </div>
+              {voiceCaptured && (
+                <p className="success-text">
+                  ✅ Voice recorded successfully
+                </p>
+              )}
             </div>
           </div>
 
-          <button type="submit" className="submit-btn">Predict Stress Level</button>
+          <button
+            type="submit"
+            className="submit-btn"
+          >
+            Predict Stress Level
+          </button>
+        </>
+      )}
         </form>
 
         {message && <div className="dashboard-message">{message}</div>}
       </div>
     </div>
+  
   );
 }
 

@@ -5,7 +5,11 @@ import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import "./Dashboard.css";
 
-function Dashboard({ hasHistory }) {
+function Dashboard({
+  hasHistory,
+  onAssessmentSubmit,
+  handleLogout
+}) {
 
   const location = useLocation();
 
@@ -16,10 +20,16 @@ function Dashboard({ hasHistory }) {
   return (
     <div className="full-dashboard-wrapper">
 
-      <Header hasHistory={hasHistory} />
+      <Header hasHistory={hasHistory}
+      handleLogout={handleLogout}
+       />
 
       <main className="dashboard-main">
-        <Outlet />
+      <Outlet
+          context={{
+            onAssessmentSubmit
+          }}
+        />
       </main>
 
     </div>

@@ -225,6 +225,7 @@ app.post('/api/assessment', async (req, res) => {
       message: "Multi-Modal Assessment compiled and saved successfully",
       stress_label: finalLabel,
       stress_score: finalScore,
+      predicted_score: finalScore,
       recommendations,
       breakdown: combinedRes.data.breakdown,
       assessment
@@ -242,10 +243,16 @@ app.post('/api/assessment', async (req, res) => {
 // ---------------------------------------------------
 // 7. GET ASSESSMENT HISTORY FOR USER
 // ---------------------------------------------------
+// ---------------------------------------------------
+// 📋 ✅ FIXED: GET ASSESSMENT HISTORY FOR USER (UPDATED SCHEMA FORWARDING)
+// ---------------------------------------------------
 app.get('/api/get-history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const history = await Assessment.find({ userId }).sort({ createdAt: -1 });
+    
+    // Sort with 1 (Oldest First) or -1 (Newest First) depending on graph requirements
+    // For sequential timeline bar graphs, sorting by 1 (Oldest First) flows standardly
+    const history = await Assessment.find({ userId }).sort({ createdAt: 1 });
 
     return res.status(200).json({
       success: true,
@@ -253,6 +260,12 @@ app.get('/api/get-history/:userId', async (req, res) => {
       history: history.map((item) => ({
         _id: item._id,
         createdAt: item.createdAt,
+        
+        // ⭐ CRITICAL FIX: Explicitly map your new database keys so React can read them!
+        overall_score: item.stressScore || item.overall_score || 0,
+        predicted_score: item.stressScore || item.overall_score || 0,
+        
+        // Retain legacy mappings for structural schema safety
         stressLevel: item.stressLevel,
         stressScore: item.stressScore,
         anxiety_level: item.anxiety_level,
@@ -278,7 +291,7 @@ app.get('/api/get-history/:userId', async (req, res) => {
       }))
     });
   } catch (err) {
-    console.error("Get history error:", err);
+    console.error("❌ Get history mapping route failure:", err);
     return res.status(500).json({ success: false, message: "Error fetching history" });
   }
 });
@@ -616,6 +629,42 @@ app.post('/api/update-profile', async (req, res) => {
     res.status(500).json({ message: "Failed to update profile." });
 
   }
+});
+
+// ---------------------------------------------------
+// DELETE ACCOUNT
+// ---------------------------------------------------
+
+app.delete('/api/delete-account/:userId', async (req, res) => {
+
+  try {
+
+    const { userId } = req.params;
+
+    // Delete all assessments
+    await Assessment.deleteMany({
+      userId
+    });
+
+    // Delete user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Account deleted successfully"
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Account deletion failed"
+    });
+
+  }
+
 });
 
 // ---------------------------------------------------

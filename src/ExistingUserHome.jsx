@@ -20,7 +20,7 @@ ChartJS.register(
   Legend
 );
 
-// ⭐ Motivational Quotes
+// Motivational Quotes
 const quotes = [
   "Every small step you take toward balance counts more than you think.",
   "You are stronger than the stress you feel today.",
@@ -33,368 +33,189 @@ const quotes = [
 ];
 
 function ExistingUserHome() {
-
-  
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quote, setQuote] = useState("");
   
-  const userData =
-    JSON.parse(localStorage.getItem("userData"));
-
+  const userData = JSON.parse(localStorage.getItem("userData"));
   const userId = userData?.userId;
+  const userName = userData?.name || "User";
 
-  const userName =
-    userData?.name || "User";
-
-  
   // =========================================
-  // RANDOM QUOTE
+  // RANDOM QUOTE GENERATOR
   // =========================================
-
   useEffect(() => {
-
-    const random =
-      Math.floor(Math.random() * quotes.length);
-
+    const random = Math.floor(Math.random() * quotes.length);
     setQuote(quotes[random]);
-
   }, []);
 
   // =========================================
-  // FETCH HISTORY
+  // FETCH HISTORY FROM API
   // =========================================
-
   useEffect(() => {
-
     if (!userId) return;
 
-    fetch(
-      `http://localhost:5000/api/get-history/${userId}`
-    )
+    fetch(`http://localhost:5000/api/get-history/${userId}`)
       .then((res) => res.json())
-
       .then((data) => {
-
-        console.log("Fetched History:", data);
-
+        console.log("Fetched History Payload:", data);
         setHistory(data.history || []);
-
         setLoading(false);
       })
-
       .catch((err) => {
-
-        console.error(
-          "Error fetching history",
-          err
-        );
-
+        console.error("Error fetching history:", err);
         setLoading(false);
       });
-
   }, [userId]);
 
   // =========================================
-  // LOADING
+  // HELPER FUNCTION: CONVERT SCORE TO LABEL
   // =========================================
+  const getStressLabelFromScore = (score) => {
+    if (score <= 35) return "Low Stress";
+    if (score <= 70) return "Medium Stress";
+    return "High Stress";
+  };
 
+  const getLabelColor = (label) => {
+    if (label === "Low Stress") return "#28a745"; // Green
+    if (label === "Medium Stress") return "#ffc107"; // Yellow
+    return "#dc3545"; // Red
+  };
+
+  // =========================================
+  // LOADING STATE
+  // =========================================
   if (loading) {
-
     return (
-      <h2 style={{ textAlign: "center" }}>
-        Loading...
+      <h2 style={{ textAlign: "center", marginTop: "100px" }}>
+        Loading Dashboard...
       </h2>
     );
   }
 
   // =========================================
-  // NO HISTORY
+  // NO HISTORY STATE
   // =========================================
-
   if (history.length === 0) {
-
     return (
-
       <div className="history-card fade-in">
-
-        <h1>
-          Welcome to your Dashboard 🎉
-        </h1>
-
-        <p>
-          You haven’t completed any
-          assessments yet.
-        </p>
-
-        <p>
-          Submit your first assessment to
-          start tracking your stress trends.
-        </p>
-
-        <p className="motivational-quote fade-in">
-          {quote}
-        </p>
-
+        <h1>Welcome to your Dashboard 🎉</h1>
+        <p>You haven’t completed any assessments yet.</p>
+        <p>Submit your first assessment to start tracking your stress trends.</p>
+        <p className="motivational-quote fade-in">{quote}</p>
       </div>
     );
   }
 
   // =========================================
-  // LABELS
+  // PROCESSING HISTORY TIMELINES (BAR GRAPH FIX)
   // =========================================
-
   const labels = history.map((item) =>
-
-    new Date(
-      item.createdAt || Date.now()
-    ).toLocaleDateString('en-GB', {
-
+    new Date(item.createdAt || Date.now()).toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short'
-
     })
   );
 
-  // =========================================
-  // STRESS VALUES
-  // =========================================
-
   const stressValues = history
-
     .map((item) => {
-
-      console.log(
-        "History Item:",
-        item
-      );
-
-      // predicted_score
-      if (
-
-        item.predicted_score !== undefined &&
-
-        !isNaN(
-          Number(item.predicted_score)
-        )
-
-      ) {
-
-        return Number(
-          item.predicted_score
-        );
+      // 1. Look for your new unified endpoint score parameter
+      if (item.overall_score !== undefined && !isNaN(Number(item.overall_score))) {
+        return Number(item.overall_score);
       }
-
-      // stressLevel
-      if (
-
-        item.stressLevel !== undefined &&
-
-        !isNaN(
-          Number(item.stressLevel)
-        )
-
-      ) {
-
-        return Number(
-          item.stressLevel
-        );
+      // 2. Look for fallback prediction metric keys
+      if (item.predicted_score !== undefined && !isNaN(Number(item.predicted_score))) {
+        return Number(item.predicted_score);
       }
-
-      // stress_label fallback
-      if (item.stress_label) {
-
-        if (
-          item.stress_label ===
-          "Low Stress"
-        ) {
-          return 25;
-        }
-
-        if (
-          item.stress_label ===
-          "Medium Stress"
-        ) {
-          return 55;
-        }
-
-        if (
-          item.stress_label ===
-          "High Stress"
-        ) {
-          return 85;
-        }
+      // 3. Look for legacy backup numbers
+      if (item.stressScore !== undefined && !isNaN(Number(item.stressScore))) {
+        return Number(item.stressScore);
       }
+      if (item.stressLevel !== undefined && !isNaN(Number(item.stressLevel))) {
+        return Number(item.stressLevel);
+      }
+      // 4. Handle text backups
+      if (item.stressLevel === "Low Stress") return 25;
+      if (item.stressLevel === "Medium Stress") return 55;
+      if (item.stressLevel === "High Stress") return 85;
 
       return null;
     })
-
-    .filter(
-      (value) => value !== null
-    );
-
-  console.log(
-    "Final Stress Values:",
-    stressValues
-  );
+    .filter((value) => value !== null);
 
   // =========================================
-  // SAFE CALCULATIONS
+  // SUMMARY CALCULATIONS (COUNTING CATEGORIES)
   // =========================================
+  const totalAssessments = stressValues.length;
 
-  const totalAssessments =
-    stressValues.length;
+  // Track counts of each specific assessment outcome level
+  let lowCount = 0;
+  let mediumCount = 0;
+  let highCount = 0;
 
-  const lastAssessment =
+  stressValues.forEach((val) => {
+    if (val <= 35) lowCount++;
+    else if (val <= 70) mediumCount++;
+    else highCount++;
+  });
 
-    totalAssessments > 0
-
-      ? stressValues[
-          totalAssessments - 1
-        ]
-
-      : 0;
-
-  const averageStress =
-
-    totalAssessments > 0
-
-      ? Math.round(
-
-          stressValues.reduce(
-
-            (sum, val) =>
-              sum + val,
-
-            0
-
-          ) / totalAssessments
-
-        )
-
-      : 0;
-
-  const highestStress =
-
-    totalAssessments > 0
-
-      ? Math.max(...stressValues)
-
-      : 0;
-
-  const lowestStress =
-
-    totalAssessments > 0
-
-      ? Math.min(...stressValues)
-
-      : 0;
+  // Extract the latest assessment score to convert it into a string label
+  const latestNumericScore = totalAssessments > 0 ? stressValues[totalAssessments - 1] : 0;
+  const latestStressLabel = getStressLabelFromScore(latestNumericScore);
 
   // =========================================
-  // BAR COLORS
+  // BAR DYNAMIC COLOR FUNCTIONS
   // =========================================
-
   const getBarColor = (value) => {
-
-    if (value <= 40)
-      return "rgba(0, 200, 0, 0.6)";
-
-    if (value <= 70)
-      return "rgba(255, 206, 86, 0.6)";
-
-    return "rgba(255, 99, 132, 0.6)";
+    if (value <= 35) return "rgba(40, 167, 69, 0.6)";   // Symmetrical green
+    if (value <= 70) return "rgba(255, 193, 7, 0.6)";   // Symmetrical yellow
+    return "rgba(220, 53, 69, 0.6)";    // Symmetrical red
   };
 
   const getBorderColor = (value) => {
-
-    if (value <= 40)
-      return "rgb(0, 200, 0)";
-
-    if (value <= 70)
-      return "rgb(255, 206, 86)";
-
-    return "rgb(255, 99, 132)";
+    if (value <= 35) return "rgb(40, 167, 69)";
+    if (value <= 70) return "rgb(255, 193, 7)";
+    return "rgb(220, 53, 69)";
   };
 
   // =========================================
-  // CHART DATA
+  // CHART CONFIGURATIONS
   // =========================================
-
   const chartData = {
-
     labels,
-
     datasets: [
-
       {
         label: "Stress Level (%)",
-
         data: stressValues,
-
-        backgroundColor:
-          stressValues.map((v) =>
-            getBarColor(v)
-          ),
-
-        borderColor:
-          stressValues.map((v) =>
-            getBorderColor(v)
-          ),
-
+        backgroundColor: stressValues.map((v) => getBarColor(v)),
+        borderColor: stressValues.map((v) => getBorderColor(v)),
         borderWidth: 1,
-
         borderRadius: 8,
       },
     ],
   };
 
-  // =========================================
-  // CHART OPTIONS
-  // =========================================
-
   const chartOptions = {
-
     responsive: true,
-
     maintainAspectRatio: false,
-
     plugins: {
-
-      legend: {
-        display: true,
-      },
-
-      title: {
-        display: false,
-      },
+      legend: { display: true },
+      title: { display: false },
     },
-
     scales: {
-
       y: {
-
         beginAtZero: true,
-
         max: 100,
-
         ticks: {
-
           stepSize: 10,
-
           padding: 10,
-
-          font: {
-            size: 12
-          },
+          font: { size: 12 },
         },
       },
-
       x: {
-
         ticks: {
-
           maxRotation: 45,
-
           minRotation: 45,
         },
       },
@@ -402,126 +223,56 @@ function ExistingUserHome() {
   };
 
   // =========================================
-  // UI
+  // CORE COMPONENT RENDER INTERFACE
   // =========================================
-
   return (
-
     <div className="dashboard-wrapper">
-
       {/* WELCOME */}
-
       <div className="welcome-banner fade-in">
-
-        <h2>
-          Welcome back,
-          {userName}! 👋
-        </h2>
-
-        <p>
-          Your personal wellness insights
-          are updated below.
-        </p>
-
-        <p className="motivational-quote fade-in">
-          {quote}
-        </p>
-
+        <h2>Welcome back, {userName}! 👋</h2>
+        <p>Your personal wellness insights are updated below.</p>
+        <p className="motivational-quote fade-in">{quote}</p>
       </div>
 
-      {/* DASHBOARD */}
-
+      {/* DASHBOARD CARD */}
       <div className="history-card fade-in">
-
-        <h1>
-          Your Wellness Dashboard
-        </h1>
+        <h1>Your Wellness Dashboard</h1>
 
         <div className="current-status-box">
-
-          <p>
-            Your Latest Stress Level:
-          </p>
-
-          <h2>
-            {lastAssessment}%
+          <p>Your Latest Stress Level:</p>
+          <h2 style={{ color: getLabelColor(latestStressLabel), fontSize: "2.2rem", fontWeight: "700" }}>
+            {latestStressLabel}
           </h2>
-
         </div>
 
-        {/* SUMMARY */}
-
+        {/* SUMMARY CARDS SECTION */}
         <div className="summary-cards">
-
-          <div className="summary-card">
-
-            <h4>
-              Average Stress
-            </h4>
-
-            <p>
-              {averageStress}%
-            </p>
-
+          <div className="summary-card" style={{ borderTop: "4px solid #28a745" }}>
+            <h4>🟢 Low Stress Cases</h4>
+            <p style={{ color: "#28a745" }}>{lowCount}</p>
           </div>
 
-          <div className="summary-card">
-
-            <h4>
-              Highest Stress
-            </h4>
-
-            <p>
-              {highestStress}%
-            </p>
-
+          <div className="summary-card" style={{ borderTop: "4px solid #ffc107" }}>
+            <h4>🟡 Medium Stress Cases</h4>
+            <p style={{ color: "#ffc107" }}>{mediumCount}</p>
           </div>
 
-          <div className="summary-card">
-
-            <h4>
-              Lowest Stress
-            </h4>
-
-            <p>
-              {lowestStress}%
-            </p>
-
+          <div className="summary-card" style={{ borderTop: "4px solid #dc3545" }}>
+            <h4>🔴 High Stress Cases</h4>
+            <p style={{ color: "#dc3545" }}>{highCount}</p>
           </div>
 
-          <div className="summary-card">
-
-            <h4>
-              Total Assessments
-            </h4>
-
-            <p>
-              {totalAssessments}
-            </p>
-
+          <div className="summary-card" style={{ borderTop: "4px solid #2575fc" }}>
+            <h4>📊 Total Assessments</h4>
+            <p style={{ color: "#2575fc" }}>{totalAssessments}</p>
           </div>
-
         </div>
 
-        {/* CHART */}
-
-        <div
-          className="chart-container"
-          style={{
-            height: "400px",
-            marginTop: "30px",
-          }}
-        >
-
-          <Bar
-            data={chartData}
-            options={chartOptions}
-          />
-
+        {/* COMPREHENSIVE TIMELINE CHART CONTAINER */}
+        <div className="chart-container" style={{ height: "400px", marginTop: "40px" }}>
+          <Bar data={chartData} options={chartOptions} />
         </div>
-
       </div>
-
     </div>
   );
 }

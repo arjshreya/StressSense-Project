@@ -1,48 +1,161 @@
 /* src/Header.css */
 .header-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 40px;
-    background: linear-gradient(90deg, #6a11cb, #2575fc);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-  }
-  
-  .logo {
-    font-size: 1.5rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  
-  .nav-links button {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 400;
-    cursor: pointer;
-    margin-left: 20px;
-    transition: all 0.2s;
-    padding: 5px 10px;
-    border-radius: 5px;
-  }
-  
-  .nav-links button:hover {
-    background-color: rgba(255,255,255,0.1);
-  }
-  
-  .logout-btn {
-    background-color: #dc3545;
-    padding: 8px 15px;
-    border-radius: 20px;
-  }
-  
-  .logout-btn:hover {
-    background-color: #c82333;
-  }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: linear-gradient(90deg, #6a11cb, #2575fc);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nav-links button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+  margin-left: 20px;
+  transition: all 0.2s;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.nav-links button:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.logout-btn {
+  background-color: #dc3545;
+  padding: 8px 15px;
+  border-radius: 20px;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
+/* ========================================================================
+   LOGOUT POPUP MODAL ARCHITECTURE
+   ======================================================================== */
+
+/* Backdrop overlay that darkens the entire viewport screen background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Translucent dimming */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Forces the component stack on top of everything else */
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* The standalone white dialog popup box card wrapper */
+.delete-modal {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+  box-sizing: border-box;
+  animation: scaleUp 0.2s ease-out;
+}
+
+.delete-modal h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.4rem;
+  color: #333333;
+}
+
+.delete-modal p {
+  color: #666666;
+  font-size: 1rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Horizontal button placement row container grid */
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Perfect proportional breathing margins */
+  width: 100%;
+}
+
+/* Shared structural modal action buttons formatting configurations */
+.delete-modal button {
+  padding: 10px 25px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  border-radius: 25px !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important; /* Resets any global template margin variables */
+}
+
+/* Cancel Button Variants Styles Tracking */
+.delete-modal .cancel-btn {
+  background-color: #e0e0e0 !important;
+  color: #333333 !important;
+}
+
+.delete-modal .cancel-btn:hover {
+  background-color: #d5d5d5 !important;
+}
+
+/* Delete/Confirm Logout Button Variants Styles Tracking */
+.delete-modal .delete-btn {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.delete-modal .delete-btn:hover {
+  background-color: #c82333 !important;
+}
+
+/* Success OK Button Variant Layout */
+.delete-modal .save-btn {
+  background-color: #28a745 !important;
+  color: #ffffff !important;
+  padding: 10px 40px !important;
+}
+
+.delete-modal .save-btn:hover {
+  background-color: #218838 !important;
+}
+
+/* Interactive scaling focus click mechanics response */
+.delete-modal button:active {
+  transform: scale(0.97);
+}
+
+/* Smooth structural animation entry transformations blueprints */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

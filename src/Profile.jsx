@@ -7,6 +7,11 @@ function Profile() {
   const [previewImage, setPreviewImage] = useState(null);
 
   const [isEditing, setIsEditing] = useState(false); // <-- NEW STATE
+  const [showDeleteModal, setShowDeleteModal] =
+  useState(false);
+  const [successMessage, setSuccessMessage] =
+  useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem("userData");
@@ -86,7 +91,21 @@ function Profile() {
       alert("Save failed!");
     }
   };
+  const handleDeleteAccount = async () => {
+  try {
+    const userData = JSON.parse(localStorage.getItem("userData"));
 
+    await axios.delete(`/api/delete-account/${userData.userId}`);
+
+    setShowDeleteModal(false);
+    setSuccessMessage("Account deleted successfully.");
+    setShowSuccessModal(true);
+  } catch (error) {
+    setShowDeleteModal(false);
+    setSuccessMessage("Failed to delete account.");
+    setShowSuccessModal(true);
+  }
+};
   return (
     <div className="profile-container">
       <h1>Your Profile</h1>
@@ -142,6 +161,112 @@ function Profile() {
           SAVE CHANGES
         </button>
       )}
+      <button
+        className="delete-account-btn"
+        onClick={() => setShowDeleteModal(true)}
+      >
+        Delete Account
+      </button>
+      {
+      showDeleteModal && (
+
+        <div className="modal-overlay">
+
+          <div className="delete-modal">
+
+            <h3>
+              Delete Account
+            </h3>
+
+            <p>
+              This action cannot be undone.
+            </p>
+
+            <p>
+              All assessment history will be permanently removed.
+            </p>
+
+            <div className="modal-buttons">
+
+              <button
+                className="cancel-btn"
+                onClick={() =>
+                  setShowDeleteModal(false)
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                className="delete-btn"
+                onClick={handleDeleteAccount}
+              >
+                Delete Account
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )
+}
+{showDeleteModal && (
+  <div className="modal-overlay">
+    <div className="delete-modal">
+      <h3>Delete Account</h3>
+
+      <p>This action cannot be undone.</p>
+      <p>All assessment history will be permanently removed.</p>
+
+      <div className="modal-buttons">
+        <button
+          className="cancel-btn"
+          onClick={() => setShowDeleteModal(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="delete-btn"
+          onClick={handleDeleteAccount}
+        >
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* SUCCESS MODAL */}
+{showSuccessModal && (
+  <div className="modal-overlay">
+    <div className="delete-modal">
+      <h3>Success</h3>
+
+      <p>{successMessage}</p>
+
+      <div className="modal-buttons">
+        <button
+          className="save-btn"
+          onClick={() => {
+            setShowSuccessModal(false);
+
+            if (
+              successMessage === "Account deleted successfully."
+            ) {
+              localStorage.clear();
+              window.location.href = "/";
+            }
+          }}
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

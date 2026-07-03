@@ -1,0 +1,183 @@
+/* src/ResultGauge.css - Dedicated Results Page Styles */
+
+/* --- LAYOUT WRAPPERS & CONTAINERS --- */
+.results-page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  padding-top: 400px; /* 🔹 Increased to explicitly push the white card lower on the screen */
+  padding-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f4f7fb;
+  box-sizing: border-box;
+}
+
+.results-page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* --- MAIN RESULT CARD --- */
+.results-card-custom {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 950px; 
+  margin: 0 auto; /* 🔹 Changed from 20px auto to 0 auto to prevent flexbox scaling pulling it up */
+  padding: 50px 60px;
+  border-radius: 24px;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.08);
+  text-align: center;
+  overflow: visible; 
+  box-sizing: border-box;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-top: 0 !important;
+  font-size: 0.9rem; 
+  margin-bottom: 20px;
+}
+
+.gauge-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 260px;
+  margin: 0 auto;
+}
+
+.gauge-center-text {
+  position: absolute;
+  top: 72%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+}
+
+.gauge-label {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.gauge-subtitle {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.summary-cards {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  text-align: center;
+  margin: 30px 0;
+  width: 100%;
+}
+
+.summary-card {
+  flex: 1;
+  background: #ffffff;
+  padding: 20px 15px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #eef2f5;
+}
+
+.summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.summary-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.summary-card p {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+.recommendations-block {
+  width: 100%;
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.recommendations-block h3 {
+  margin-bottom: 20px;
+  color: #2f2fb8;
+  font-size: 1.4rem;
+}
+
+.recommendations-block ul {
+  width: 100%;
+  max-width: 600px;
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations-block li {
+  background: #f4f7ff;
+  margin-bottom: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 15px;
+  color: #444;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.submit-btn {
+  background: linear-gradient(90deg, #6a11cb, #2575fc);
+  color: #fff;
+  margin-top: 30px;
+  width: 100%;
+  max-width: 300px;
+  padding: 16px 40px;
+  border-radius: 14px;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.warning-box h4 {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .summary-cards {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .results-card-custom {
+    padding: 30px 20px;
+  }
+}
